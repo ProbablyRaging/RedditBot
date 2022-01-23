@@ -20,7 +20,7 @@ const reddit = new snoowrap({
  * sub.title =          Submission title
  */
 
-let currentSubreddit = 0;
+let currentSubreddit = 5;
 
 // start our first function
 startSubreddit(subreddits.name[currentSubreddit]);
@@ -35,9 +35,9 @@ function startSubreddit(subredditName) {
             threads.forEach(async sub => {
                 if (err) console.error(err);
 
-                // only push the submission id if we haven't already replied to it
-                if (!logFile.includes(sub?.id)) {
-                    subIdsArr.push({ id: sub?.id, title: sub?.title });
+                // only push the submission if we haven't replied to the author before
+                if (!logFile.includes(sub?.author.name)) {
+                    subIdsArr.push({ id: sub?.id, title: sub?.title, author: sub?.author.name });
                 }
             });
 
@@ -83,12 +83,12 @@ function startSubreddit(subredditName) {
                     if (!unrepliable && !rateLimit) {
                         console.log('\x1b[32m>>>\x1b[0m REPLIED TO SUBMISSION\n');
 
-                        // log the submission id so that we can ignore it next time
+                        // log the author's name so that we don't reply to their submissions again
                         var logId = fs.createWriteStream(process.env.REPLIED_LOG, {
                             flags: 'a' // append
                         });
 
-                        logId.write(`\n${subIdsArr[i]?.id}`);
+                        logId.write(`\n${subIdsArr[i]?.author}`);
                     }
 
                     // increment the submission counter

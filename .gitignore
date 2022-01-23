@@ -2,4 +2,4 @@ node_modules
 .env
 replies.js
 subreddits.js
-replied_to.txt
+replied_to.*
