@@ -1,8 +1,8 @@
 # RedditBot
-An automatic submission reply bot for the Reddit API using [snoowrap](https://github.com/not-an-aardvark/snoowrap)
+An simple submission reply bot for NodeJS and the Reddit API using [snoowrap](https://github.com/not-an-aardvark/snoowrap)
 
 # Config
-Rename `.env.example` to `.env` and input your own credentials. For more information on getting credentials, see [here](https://github.com/not-an-aardvark/reddit-oauth-helper):
+Rename `.env.example` to `.env` and input your own credentials. Create an app and find your credentials [here](https://www.reddit.com/prefs/apps):
 ```
 C_ID=""
 C_SECRET=""
