@@ -106,7 +106,7 @@ function startSubreddit(subredditName) {
 
                         waitBeforeNext();
                     }
-                }, i * parseInt(process.env.NEXT_WAIT) * 1000);
+                }, i * parseInt(process.env.REPLY_WAIT) * 1000);
             }
         });
     });
