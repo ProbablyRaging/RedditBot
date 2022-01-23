@@ -20,7 +20,8 @@ const reddit = new snoowrap({
  * sub.title =          Submission title
  */
 
-let currentSubreddit = 5;
+// which subreddit the bot should start on
+let currentSubreddit = parseInt(process.env.START_ON);
 
 // start our first function
 startSubreddit(subreddits.name[currentSubreddit]);

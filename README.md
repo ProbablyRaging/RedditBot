@@ -10,9 +10,14 @@ USER_AGENT=""
 USER_NAME=""
 PASSWORD=""
 ```
+Change which subreddit the bot should start on when first being ran:
+```
+# The index of the subreddit's name in the subreddits array that the bot should start on:
+START_ON="0"
+```
 Change the duration for certain functions to your liking:
 ```
-# Time to wait before replying to the next submission - in seconds
+# Time to wait between replying to submissions - in seconds
 REPLY_WAIT="5"
 
 # Time to wait before switching to another subreddit - in minutes
