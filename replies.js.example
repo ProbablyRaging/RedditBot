@@ -1,0 +1,6 @@
+module.exports = {
+    comment: [
+        `Wow, such great content, congrats!`,
+        `Cool thread, I gave you an upvote!`,
+    ]
+}

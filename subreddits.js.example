@@ -1,0 +1,7 @@
+module.exports = {
+    name: [
+        'gifs',
+        'news',
+        'pcmasterrace',
+    ]
+}
