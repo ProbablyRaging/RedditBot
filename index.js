@@ -26,7 +26,7 @@ let currentSubreddit = 0;
 startSubreddit(subreddits.name[currentSubreddit]);
 
 function startSubreddit(subredditName) {
-    console.log(`\x1b[36m###\x1b[0m STARTING ON SUBREDDIT: r/${subredditName}\n`);
+    console.log(`\x1b[33m###\x1b[0m STARTING ON SUBREDDIT: r/${subredditName}\n`);
 
     // get a batch of new submissions from the specified subreddit
     let subIdsArr = [];
@@ -57,11 +57,14 @@ function startSubreddit(subredditName) {
 
             for (let i = 0; i < subIdsArr?.length; i++) {
                 const timer = setTimeout(async function () {
+                    // if we hit a rate limite, return
+                    if (rateLimit) return;
+
                     // reset unrepliable to false
                     unrepliable = false;
 
                     // console log the submission counter + submission title
-                    console.log(`\x1b[2m\x1b[35m#${subCounter}\x1b[0m - ${subIdsArr[i]?.title}`)
+                    console.log(`\x1b[36m#${subCounter}\x1b[0m - ${subIdsArr[i]?.title}`)
 
                     // get a random comment from our list of replies
                     const randNum = Math.floor(Math.random() * replies.comment.length);
@@ -70,7 +73,7 @@ function startSubreddit(subredditName) {
                     await reddit.getSubmission(subIdsArr[i]?.id).reply(randReply)
                         .catch(err => {
                             // what error message did we get, console log it so we know
-                            console.log(`\x1b[2m\x1b[31m>>>\x1b[0m ${err.message.split(',')[0]}\n`)
+                            console.log(`\x1b[31m>>>\x1b[0m ${err.message.split(',')[0]}\n`)
 
                             if (err.message.split(',')[0] === 'COMMENT_UNREPLIABLE') unrepliable = true;
                             if (err.message.split(',')[0] === 'RATELIMIT') rateLimit = true;
@@ -78,15 +81,15 @@ function startSubreddit(subredditName) {
 
                     // if the reply was successful, console log it so we know
                     if (!unrepliable && !rateLimit) {
-                        console.log('\x1b[2m\x1b[32m>>>\x1b[0m REPLIED TO SUBMISSION\n')
+                        console.log('\x1b[32m>>>\x1b[0m REPLIED TO SUBMISSION\n');
+
+                        // log the submission id so that we can ignore it next time
+                        var logId = fs.createWriteStream(process.env.REPLIED_LOG, {
+                            flags: 'a' // append
+                        });
+
+                        logId.write(`\n${subIdsArr[i]?.id}`);
                     }
-
-                    // log the submission id so that we can ignore it next time
-                    var logId = fs.createWriteStream(process.env.REPLIED_LOG, {
-                        flags: 'a' // append
-                    });
-
-                    logId.write(`\n${subIdsArr[i]?.id}`);
 
                     // increment the submission counter
                     subCounter++;
@@ -103,7 +106,7 @@ function startSubreddit(subredditName) {
 
                         waitBeforeNext();
                     }
-                }, i * 5000);
+                }, i * parseInt(process.env.NEXT_WAIT) * 1000);
             }
         });
     });
@@ -111,9 +114,9 @@ function startSubreddit(subredditName) {
 
 // function for waiting before moving on to the next subreddit
 async function waitBeforeNext() {
-    console.log(`\x1b[36m###\x1b[0m FINISHED - Sleeping for ${msToTime(parseInt(process.env.RATELIMIT_WAIT) * 60000)}..\n`);
+    console.log(`\x1b[33m###\x1b[0m FINISHED - Waiting for ${msToTime(parseInt(process.env.RATELIMIT_WAIT) * 60000)}..\n`);
 
-    // wait - in seconds
+    // wait - in minutes
     await wait(parseInt(process.env.RATELIMIT_WAIT) * 60000);
 
     startSubreddit(subreddits.name[currentSubreddit]);
