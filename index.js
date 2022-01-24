@@ -2,6 +2,7 @@ require('dotenv').config();
 const snoowrap = require('snoowrap');
 const fs = require('fs');
 const wait = require("timers/promises").setTimeout;
+const moment = require('moment');
 const replies = require('./replies');
 const subreddits = require('./subreddits');
 
@@ -20,6 +21,9 @@ const reddit = new snoowrap({
  * sub.title =          Submission title
  */
 
+// log the current time
+let nowTime = moment().format('LTS');
+
 // which subreddit the bot should start on
 let currentSubreddit = parseInt(process.env.START_ON);
 
@@ -27,7 +31,8 @@ let currentSubreddit = parseInt(process.env.START_ON);
 startSubreddit(subreddits.name[currentSubreddit]);
 
 function startSubreddit(subredditName) {
-    console.log(`\x1b[33m###\x1b[0m STARTING ON SUBREDDIT: r/${subredditName}\n`);
+    nowTime = moment().format('LTS');
+    console.log(`\x1b[33m${nowTime} ###\x1b[0m STARTING ON SUBREDDIT: r/${subredditName}\n`);
 
     // get a batch of new submissions from the specified subreddit
     let subIdsArr = [];
@@ -65,7 +70,9 @@ function startSubreddit(subredditName) {
                     unrepliable = false;
 
                     // console log the submission counter + submission title
-                    console.log(`\x1b[36m#${subCounter}\x1b[0m - ${subIdsArr[i]?.title}`)
+                    let subTitle = subIdsArr[i]?.title;
+                    if (subTitle.length > 120) subTitle = subTitle.slice(0, 120) + '..';
+                    console.log(`\x1b[36m#${subCounter}\x1b[0m - ${subTitle}`);
 
                     // get a random comment from our list of replies
                     const randNum = Math.floor(Math.random() * replies.comment.length);
@@ -115,7 +122,8 @@ function startSubreddit(subredditName) {
 
 // function for waiting before moving on to the next subreddit
 async function waitBeforeNext() {
-    console.log(`\x1b[33m###\x1b[0m FINISHED - Waiting for ${msToTime(parseInt(process.env.RATELIMIT_WAIT) * 60000)}..\n`);
+    nowTime = moment().format('LTS');
+    console.log(`\x1b[33m${nowTime} ###\x1b[0m FINISHED REPLYING - Waiting ${msToTime(parseInt(process.env.RATELIMIT_WAIT) * 60000)} before continuing..\n`);
 
     // wait - in minutes
     await wait(parseInt(process.env.RATELIMIT_WAIT) * 60000);
@@ -125,7 +133,8 @@ async function waitBeforeNext() {
 
 // function to start on the next subreddit immediately
 async function noWaitBeforeNext() {
-    console.log(`\x1b[33m###\x1b[0m FOUND NO NEW SUBMISSIONS - Starting on next subreddit in ${msToTime(parseInt(process.env.NEXT_WAIT) * 1000)}..\n`);
+    nowTime = moment().format('LTS');
+    console.log(`\x1b[33m${nowTime} ###\x1b[0m NO NEW SUBMISSIONS - Starting on the next subreddit in ${msToTime(parseInt(process.env.NEXT_WAIT) * 1000)}..\n`);
 
     // wait - in seconds
     await wait(parseInt(process.env.NEXT_WAIT) * 1000);
@@ -141,5 +150,5 @@ function msToTime(ms) {
     let minutesFloor = Math.floor(minutes);
     let seconds = (minutes - minutesFloor) * 60;
     let secondFloor = Math.floor(seconds);
-    return hoursFloor + "hrs " + minutesFloor + "mins " + secondFloor + "secs";
+    return hoursFloor + "hr(s) " + minutesFloor + "min(s) " + secondFloor + "sec(s)";
 }
