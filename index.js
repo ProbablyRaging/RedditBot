@@ -21,7 +21,6 @@ const reddit = new snoowrap({
  * sub.title =          Submission title
  */
 
-// log the current time
 let nowTime = moment().format('LTS');
 
 // which subreddit the bot should start on
@@ -32,13 +31,13 @@ startSubreddit(subreddits.name[currentSubreddit]);
 
 function startSubreddit(subredditName) {
     nowTime = moment().format('LTS');
-    console.log(`\x1b[33m${nowTime} ###\x1b[0m STARTING ON SUBREDDIT: r/${subredditName}\n`);
+    console.log(`\x1b[1m\x1b[33m${nowTime} ###\x1b[0m STARTING ON SUBREDDIT: r/${subredditName}`);
 
     // get a batch of new submissions from the specified subreddit
     let subIdsArr = [];
     reddit.getSubreddit(subredditName).getNew({ limit: parseInt(process.env.GET_SUBMISSIONS) }).then(threads => {
         fs.readFile(process.env.REPLIED_LOG, async function (err, logFile) {
-            threads.forEach(async sub => {
+            threads.forEach(sub => {
                 if (err) console.error(err);
 
                 // only push the submission if we haven't replied to the author before
@@ -47,13 +46,19 @@ function startSubreddit(subredditName) {
                 }
             });
 
-            // if there are no unreplied submission, we can move on to the next subreddit immediately
+            // console log how many unreplied submissions we found
+            nowTime = moment().format('LTS');
+            console.log(`\x1b[1m\x1b[33m${nowTime} ###\x1b[0m FOUND \x1b[36m${subIdsArr.length}\x1b[0m UNREPLIED SUBMISSIONS\n`);
+            await wait(1000);
+
+            // if there are no unreplied submissions, we can move on to the next subreddit immediately
             if (subIdsArr?.length === 0) {
                 // increment the current subreddit
                 currentSubreddit++;
 
                 // if we reach the end of our subreddits list, return to 0 and start again
                 if (currentSubreddit === subreddits.name.length - 1) currentSubreddit = 0;
+
                 noWaitBeforeNext();
             }
 
@@ -62,59 +67,56 @@ function startSubreddit(subredditName) {
             let rateLimit = false;
 
             for (let i = 0; i < subIdsArr?.length; i++) {
-                const timer = setTimeout(async function () {
-                    // if we hit a rate limite, return
-                    if (rateLimit) return;
+                // reset unrepliable to false
+                unrepliable = false;
 
-                    // reset unrepliable to false
-                    unrepliable = false;
+                // console log the submission counter + submission title
+                let subTitle = subIdsArr[i]?.title.length > 120 ? subIdsArr[i]?.title.slice(0, 120) + '..' : subIdsArr[i]?.title;
+                console.log(`\x1b[36m#${subCounter}\x1b[0m - ${subTitle}`);
 
-                    // console log the submission counter + submission title
-                    let subTitle = subIdsArr[i]?.title;
-                    if (subTitle.length > 120) subTitle = subTitle.slice(0, 120) + '..';
-                    console.log(`\x1b[36m#${subCounter}\x1b[0m - ${subTitle}`);
+                // get a random comment from our list of replies
+                const randNum = Math.floor(Math.random() * replies.comment.length);
 
-                    // get a random comment from our list of replies
-                    const randNum = Math.floor(Math.random() * replies.comment.length);
-                    const randReply = replies.comment[randNum];
+                await reddit.getSubmission(subIdsArr[i]?.id).reply(replies.comment[randNum])
+                    .catch(err => {
+                        // what error message did we get, console log it so we know
+                        console.log(`\x1b[31m>>>\x1b[0m ${err.message.split(',')[0]}\n`)
 
-                    await reddit.getSubmission(subIdsArr[i]?.id).reply(randReply)
-                        .catch(err => {
-                            // what error message did we get, console log it so we know
-                            console.log(`\x1b[31m>>>\x1b[0m ${err.message.split(',')[0]}\n`)
+                        if (err.message.split(',')[0] === 'COMMENT_UNREPLIABLE') unrepliable = true;
+                        if (err.message.split(',')[0] === 'RATELIMIT') rateLimit = true;
+                    });
 
-                            if (err.message.split(',')[0] === 'COMMENT_UNREPLIABLE') unrepliable = true;
-                            if (err.message.split(',')[0] === 'RATELIMIT') rateLimit = true;
-                        });
+                // if the reply was successful, console log it so we know
+                if (!unrepliable && !rateLimit) {
+                    console.log('\x1b[32m>>>\x1b[0m REPLIED TO SUBMISSION\n');
+                }
 
-                    // if the reply was successful, console log it so we know
-                    if (!unrepliable && !rateLimit) {
-                        console.log('\x1b[32m>>>\x1b[0m REPLIED TO SUBMISSION\n');
+                // if we weren't rate limited, log the author's name so that we don't reply to their submissions again
+                if (!rateLimit) {
+                    var logId = fs.createWriteStream(process.env.REPLIED_LOG, {
+                        flags: 'a' // append
+                    });
 
-                        // log the author's name so that we don't reply to their submissions again
-                        var logId = fs.createWriteStream(process.env.REPLIED_LOG, {
-                            flags: 'a' // append
-                        });
+                    logId.write(`\n${subIdsArr[i]?.author}`);
+                }
 
-                        logId.write(`\n${subIdsArr[i]?.author}`);
-                    }
+                // increment the submission counter
+                subCounter++;
 
-                    // increment the submission counter
-                    subCounter++;
+                // when we get to the end of our submissions array or if we hit a rate limit, wait before starting the next function
+                if (rateLimit || i === subIdsArr?.length - 1) {
+                    // increment the current subreddit
+                    currentSubreddit++;
 
-                    // when we get to the end of our submissions array or if we hit a rate limit, wait before starting the next function
-                    if (rateLimit || i === subIdsArr?.length - 1) {
-                        clearTimeout(timer);
+                    // if we reach the end of our subreddits list, return to 0 and start again
+                    if (currentSubreddit === subreddits.name.length - 1) currentSubreddit = 0;
 
-                        // increment the current subreddit
-                        currentSubreddit++;
+                    waitBeforeNext();
+                }
 
-                        // if we reach the end of our subreddits list, return to 0 and start again
-                        if (currentSubreddit === subreddits.name.length - 1) currentSubreddit = 0;
-
-                        waitBeforeNext();
-                    }
-                }, i * parseInt(process.env.REPLY_WAIT) * 1000);
+                // wait before replying to another submissions
+                let replyWait = unrepliable ? 100 : parseInt(process.env.REPLY_WAIT) * 1000;
+                await wait(replyWait);
             }
         });
     });
@@ -123,7 +125,7 @@ function startSubreddit(subredditName) {
 // function for waiting before moving on to the next subreddit
 async function waitBeforeNext() {
     nowTime = moment().format('LTS');
-    console.log(`\x1b[33m${nowTime} ###\x1b[0m FINISHED REPLYING - Waiting ${msToTime(parseInt(process.env.RATELIMIT_WAIT) * 60000)} before continuing..\n`);
+    console.log(`\x1b[1m\x1b[33m${nowTime} ###\x1b[0m FINISHED REPLYING - Waiting ${msToTime(parseInt(process.env.RATELIMIT_WAIT) * 60000)} before continuing..\n`);
 
     // wait - in minutes
     await wait(parseInt(process.env.RATELIMIT_WAIT) * 60000);
@@ -134,7 +136,7 @@ async function waitBeforeNext() {
 // function to start on the next subreddit immediately
 async function noWaitBeforeNext() {
     nowTime = moment().format('LTS');
-    console.log(`\x1b[33m${nowTime} ###\x1b[0m NO NEW SUBMISSIONS - Starting on the next subreddit in ${msToTime(parseInt(process.env.NEXT_WAIT) * 1000)}..\n`);
+    console.log(`\x1b[1m\x1b[33m${nowTime} ###\x1b[0m NO NEW SUBMISSIONS - Starting on the next subreddit in ${msToTime(parseInt(process.env.NEXT_WAIT) * 1000)}..\n`);
 
     // wait - in seconds
     await wait(parseInt(process.env.NEXT_WAIT) * 1000);
