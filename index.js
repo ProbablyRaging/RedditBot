@@ -119,6 +119,8 @@ async function startSubreddit(subredditName) {
             nowTime = moment().format('LTS');
             console.log(`\x1b[1m\x1b[33m${nowTime} ###\x1b[0m FINISHED - SUCCSSFULLY REPLIED TO \x1b[36m${replyCount} of ${submissions?.length}\x1b[0m SUBMISSIONS..\n`);
 
+            replyCount = 0;
+
             await wait(1800 * 1000);
 
             startSubreddit();
