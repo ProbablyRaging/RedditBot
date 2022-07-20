@@ -15,6 +15,11 @@ Create a `.txt` file named `replied_to.txt` in the same directory for where the 
 # A file to log the submissions that we have replied to already
 REPLIED_LOG="./replied_to.txt"
 ```
+Set an interval for how frequently we should reply to submissions
+```
+# Time to wait between replying to submissions - in seconds
+REPLY_WAIT="5"
+```
 Rename `subreddits.js.example` to `subreddits.js` and include the names of any subreddits you want the bot to check for new submissions in:
 ```
 module.exports = {

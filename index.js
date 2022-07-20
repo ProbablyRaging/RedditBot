@@ -6,7 +6,6 @@ const moment = require('moment');
 const replies = require('./replies');
 const subreddits = require('./subreddits');
 
-
 // initiate our reddit instance
 const reddit = new snoowrap({
     userAgent: process.env.USER_AGENT,
@@ -37,7 +36,7 @@ async function startSubreddit(subredditName) {
     }
 
     for (let i = 0; i < subreddits.name.length; i++) {
-        await reddit.getSubreddit(subreddits.name[i]).getNew({ limit: 10 }).then(threads => {
+        await reddit.getSubreddit(subreddits.name[i]).getNew({ limit: 3 }).then(threads => {
             fs.readFile(process.env.REPLIED_LOG, async function (err, logFile) {
                 threads.forEach(sub => {
                     if (err) console.error(err);
@@ -137,7 +136,7 @@ async function startSubreddit(subredditName) {
 
             replyCount = 0;
 
-            await wait(3000);
+            await wait(120000);
 
             startSubreddit();
             return;
